@@ -310,6 +310,9 @@ type DeploymentConfigSpec struct {
 	// Replicas is the number of desired replicas.
 	Replicas int32
 
+	//MaxReplicas is maximum number replicas can be set to.
+	MaxReplicas int32
+
 	// RevisionHistoryLimit is the number of old ReplicationControllers to retain to allow for rollbacks.
 	// This field is a pointer to allow for differentiation between an explicit zero and not specified.
 	RevisionHistoryLimit *int32

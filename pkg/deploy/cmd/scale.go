@@ -29,7 +29,15 @@ type DeploymentConfigScaler struct {
 // new size, with optional precondition check (if preconditions is not nil),
 // optional retries (if retry is not nil), and then optionally waits for its
 // deployment replica count to reach the new value (if wait is not nil).
+// a failing precondition is created if Spec.MaxReplicas is not 0 and the current replicas has reached the maximum allowed.
 func (scaler *DeploymentConfigScaler) Scale(namespace, name string, newSize uint, preconditions *kubectl.ScalePrecondition, retry, waitForReplicas *kubectl.RetryParams) error {
+	dc, err := scaler.dcClient.DeploymentConfigs(namespace).Get(name)
+	if err != nil {
+		return err
+	}
+	if dc.Spec.MaxReplicas > 0 && dc.Spec.Replicas >= dc.Spec.MaxReplicas {
+		preconditions = &kubectl.ScalePrecondition{Size: int(dc.Spec.Replicas - 1), ResourceVersion: ""}
+	}
 	if preconditions == nil {
 		preconditions = &kubectl.ScalePrecondition{Size: -1, ResourceVersion: ""}
 	}
@@ -42,10 +50,6 @@ func (scaler *DeploymentConfigScaler) Scale(namespace, name string, newSize uint
 		return err
 	}
 	if waitForReplicas != nil {
-		dc, err := scaler.dcClient.DeploymentConfigs(namespace).Get(name)
-		if err != nil {
-			return err
-		}
 		rc, err := scaler.rcClient.ReplicationControllers(namespace).Get(util.LatestDeploymentNameForConfig(dc))
 		if err != nil {
 			return err
