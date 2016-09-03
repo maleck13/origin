@@ -23,6 +23,7 @@ func TestScale(t *testing.T) {
 		size        uint
 		wait        bool
 		errExpected bool
+		maxReplicas uint
 	}{
 		{
 			name:        "simple scale",
@@ -36,6 +37,26 @@ func TestScale(t *testing.T) {
 			wait:        true,
 			errExpected: false,
 		},
+		{
+			name:        "scale with default max replicas",
+			size:        2,
+			errExpected: false,
+			wait:        false,
+		},
+		{
+			name:        "scale less than max replicas",
+			size:        2,
+			errExpected: false,
+			wait:        false,
+			maxReplicas: 2,
+		},
+		{
+			name:        "scale at max replicas",
+			size:        2,
+			errExpected: true,
+			wait:        false,
+			maxReplicas: 1,
+		},
 	}
 
 	for _, test := range tests {
@@ -46,6 +67,7 @@ func TestScale(t *testing.T) {
 
 		config := deploytest.OkDeploymentConfig(1)
 		config.Spec.Replicas = 1
+		config.Spec.MaxReplicas = int32(test.maxReplicas)
 		deployment, _ := deployutil.MakeDeployment(config, kapi.Codecs.LegacyCodec(deployapi.SchemeGroupVersion))
 
 		var wait *kubectl.RetryParams
